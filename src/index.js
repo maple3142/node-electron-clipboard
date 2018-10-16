@@ -9,10 +9,12 @@ class ClipboardWriter {
 	writeText(text) {
 		if (this.ep === null) throw new Error('ClipboardWriter has been closed.')
 		if (typeof text !== 'string') throw new TypeError('Text must exists.')
-		return this.ep.send({
-			action: 'writeText',
-			data: text
-		})
+		return this.ep
+			.send({
+				action: 'writeText',
+				data: text
+			})
+			.then(() => true)
 	}
 	async writeImage(img) {
 		if (this.ep === null) throw new Error('ClipboardWriter has been closed.')
@@ -29,9 +31,32 @@ class ClipboardWriter {
 				action: 'writeImage',
 				data: img
 			})
-			.then(r => {
+			.then(() => {
 				if (typeof outercleanup === 'function') outercleanup()
-				return r
+				return true
+			})
+	}
+	readText() {
+		return this.ep.send({
+			action: 'readText'
+		})
+	}
+	readImage(type = 'PNG') {
+		if (type !== 'PNG' && type !== 'JPEG') {
+			throw new TypeError('Invalid image type.')
+		}
+		return this.ep
+			.send({
+				action: 'readImage',
+				data: type
+			})
+			.then(async imgpath => {
+				const buf = await fs.readFile(imgpath)
+				await this.ep.send({
+					action: '_cleanup',
+					data: imgpath
+				})
+				return buf
 			})
 	}
 	close() {

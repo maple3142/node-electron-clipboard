@@ -23,8 +23,7 @@ const getEp = () =>
 		ep.send = msg =>
 			xf
 				.post(`http://localhost:${port}`, { json: msg })
-				.then(() => true)
-				.catch(() => false)
+				.json()
 		ep.stdout.pipe(JSONStream.parse()).on('data', ({ action, data }) => {
 			ep.emit(`data:${action}`, data)
 		})

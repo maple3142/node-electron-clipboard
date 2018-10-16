@@ -1,10 +1,11 @@
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const electron = require('electron')
 const { app, clipboard, nativeImage } = electron
 const express = require('express')
 const bodyParser = require('body-parser')
 const server = express()
+const tmp = require('tmp-promise')
 
 server.use(bodyParser.json())
 
@@ -17,36 +18,66 @@ if (typeof electron === 'string') {
 	process.exit(2)
 }
 
-server.post('/', (req, res) => {
+const cleanupfns = new Map()
+
+const handlers = {
+	writeText: data => {
+		clipboard.writeText(data)
+		return true
+	},
+	writeImage: data => {
+		const img = nativeImage.createFromPath(data)
+		clipboard.writeImage(img)
+		return true
+	},
+	readText: () => {
+		return clipboard.readText()
+	},
+	readImage: async data => {
+		const img = clipboard.readImage()
+		const buf = data === 'PNG' ? img.toPNG() : img.toJPEG(100)
+		const { path, cleanup } = await tmp.file()
+		await fs.writeFile(path, buf)
+		cleanupfns.set(path, cleanup)
+		return path
+	},
+	_cleanup: data => {
+		// data should be file path
+		const cleanup = cleanupfns.get(data)
+		if (typeof cleanup === 'function') {
+			cleanup()
+		}
+		cleanupfns.delete(data)
+		return true
+	}
+}
+
+server.post('/', async (req, res) => {
 	const { action, data } = req.body
-	switch (action) {
-		case 'writeText':
-			clipboard.writeText(data)
-			res.json({ message: 'Success' })
-			break
-		case 'writeImage':
-			const img = nativeImage.createFromPath(data)
-			clipboard.writeImage(img)
-			res.json({ message: 'Success' })
-			break
-		default:
-			res.json({ error: 'Unknown action' })
-			break
+	if (action in handlers) {
+		try {
+			const result = await handlers[action](data)
+			res.json(result)
+		} catch (err) {
+			res.status(500).json({ action, errorStack: err.stack })
+		}
+	} else {
+		res.status(404).json('Action not found.')
 	}
 })
 
 setTimeout(() => {
-	fs.readFile(path.join(__dirname, '.PORT'), 'utf-8', (err, port) => {
-		if (err) {
+	fs.readFile(path.join(__dirname, '.PORT'), 'utf-8')
+		.then(port => {
+			port = parseInt(port)
+			server.listen(port)
+			process.send({ action: 'ready', data: { port } })
+		})
+		.catch(err => {
 			process.send({ action: 'readyfailed', data: err })
-			return
-		}
-		port = parseInt(port)
-		server.listen(port)
-		process.send({ action: 'ready', data: { port } })
-	})
+		})
 }, 3000)
 
-app.on('ready', function() {
+app.on('ready', () => {
 	process.send({ action: 'electronready' })
 })
