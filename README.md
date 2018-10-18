@@ -1,4 +1,4 @@
-# node-clipboardwriter
+# node-electron-clipboard
 
 > Use electron's clipboard api under the hood to bring cross platform `writeText` and `writeImage` to node.js
 
@@ -6,7 +6,7 @@
 
 ```ts
 type imgType = 'PNG' | 'JPEG'
-interface ClipboardWriter {
+interface Clipboard {
   writeText(text: string): Promise<boolean>
   writeImage(path: string): Promise<boolean>
   writeImage(img: Buffer): Promise<boolean>
@@ -15,7 +15,7 @@ interface ClipboardWriter {
   readImage(type: imgType): Promise<Buffer>
   close(): void
 }
-type initClipboardWriter = () => Promise<ClipboardWriter>
-declare const init: initClipboardWriter
+type initClipboard = () => Promise<Clipboard>
+declare const init: initClipboard
 export = init
 ```

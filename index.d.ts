@@ -1,5 +1,5 @@
 type imgType = 'PNG' | 'JPEG'
-interface ClipboardWriter {
+interface Clipboard {
 	writeText(text: string): Promise<boolean>
 	writeImage(path: string): Promise<boolean>
 	writeImage(img: Buffer): Promise<boolean>
@@ -8,6 +8,6 @@ interface ClipboardWriter {
 	readImage(type: imgType): Promise<Buffer>
 	close(): void
 }
-type initClipboardWriter = () => Promise<ClipboardWriter>
-declare const init: initClipboardWriter
+type initClipboard = () => Promise<Clipboard>
+declare const init: initClipboard
 export = init
