@@ -70,7 +70,7 @@ setTimeout(() => {
 	fs.readFile(path.join(__dirname, '.PORT'), 'utf-8')
 		.then(port => {
 			port = parseInt(port)
-			server.listen(port)
+			server.listen(port, 'localhost')
 			process.send({ action: 'ready', data: { port } })
 		})
 		.catch(err => {
