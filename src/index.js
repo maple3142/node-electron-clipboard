@@ -2,22 +2,20 @@ const getEp = require('./ep')
 const fs = require('fs-extra')
 const tmp = require('tmp-promise')
 
-class ClipboardWriter {
+class Clipboard {
 	constructor(ep) {
 		this.ep = ep
 	}
 	writeText(text) {
-		if (this.ep === null) throw new Error('ClipboardWriter has been closed.')
+		if (this.ep === null) throw new Error('Clipboard has been closed.')
 		if (typeof text !== 'string') throw new TypeError('Text must exists.')
-		return this.ep
-			.send({
-				action: 'writeText',
-				data: text
-			})
-			.then(() => true)
+		return this.ep.send({
+			action: 'writeText',
+			data: text
+		})
 	}
 	async writeImage(img) {
-		if (this.ep === null) throw new Error('ClipboardWriter has been closed.')
+		if (this.ep === null) throw new Error('Clipboard has been closed.')
 		let outercleanup
 		if (img instanceof Buffer) {
 			const { path, cleanup } = await tmp.file()
@@ -59,10 +57,16 @@ class ClipboardWriter {
 				return buf
 			})
 	}
+	clear(type) {
+		return this.ep.send({
+			action: 'clear',
+			data: type
+		})
+	}
 	close() {
 		this.ep.kill('SIGINT')
 		this.ep = null
 	}
 }
 
-module.exports = () => getEp().then(ep => new ClipboardWriter(ep))
+module.exports = () => getEp().then(ep => new Clipboard(ep))

@@ -21,33 +21,37 @@ if (typeof electron === 'string') {
 const cleanupfns = new Map()
 
 const handlers = {
-	writeText: data => {
-		clipboard.writeText(data)
+	writeText: text => {
+		clipboard.writeText(text)
 		return true
 	},
-	writeImage: data => {
-		const img = nativeImage.createFromPath(data)
+	writeImage: imgpath => {
+		const img = nativeImage.createFromPath(imgpath)
 		clipboard.writeImage(img)
 		return true
 	},
 	readText: () => {
 		return clipboard.readText()
 	},
-	readImage: async data => {
+	readImage: async type => {
 		const img = clipboard.readImage()
-		const buf = data === 'PNG' ? img.toPNG() : img.toJPEG(100)
+		const buf = type === 'PNG' ? img.toPNG() : img.toJPEG(100)
 		const { path, cleanup } = await tmp.file()
 		await fs.writeFile(path, buf)
 		cleanupfns.set(path, cleanup)
 		return path
 	},
-	_cleanup: data => {
+	_cleanup: imgpath => {
 		// data should be file path
-		const cleanup = cleanupfns.get(data)
+		const cleanup = cleanupfns.get(imgpath)
 		if (typeof cleanup === 'function') {
 			cleanup()
 		}
-		cleanupfns.delete(data)
+		cleanupfns.delete(imgpath)
+		return true
+	},
+	clear: type => {
+		clipboard.clear(type)
 		return true
 	}
 }

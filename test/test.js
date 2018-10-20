@@ -38,6 +38,9 @@ clipinit().then(async clip => {
 		await fs.writeFile(TMPPNG, clbuf)
 		// check for yourself
 	})
+	await test('clear',async ()=>{
+		await clip.clear()
+	})
 	clip.close()
 })
 process.on('unhandledRejection', e => {

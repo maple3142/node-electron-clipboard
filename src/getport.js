@@ -3,7 +3,7 @@ const http = require('http')
 module.exports = () =>
 	new Promise((res, rej) => {
 		const server = http.createServer()
-		server.listen(0, () => {
+		server.listen(0, 'localhost', () => {
 			res(server.address().port)
 			server.close()
 		})
